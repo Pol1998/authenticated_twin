@@ -135,7 +135,7 @@ for i in range(N):
                             success_ratios[k, i] += s/M
 
 filename1 = "success_ratios.txt"
-path = os.path.join(r"C:\Users\farre\Desktop\PhD_Pol\Education\Supervision\Chris", filename1)
+path = os.path.join(r"path_to_file", filename1)
 np.savetxt(path, success_ratios)
 print(success_ratios)
 print('Done')
@@ -153,6 +153,6 @@ plt.plot(t, poly_exp, color = 'green', label = 'poly-exp')
 plt.legend()
 
 filename2 = 'performances.pdf'
-path2 = os.path.join(r"C:\Users\farre\Desktop\PhD_Pol\Education\Supervision\Chris",filename2)
+path2 = os.path.join(r"path_to_file",filename2)
 plt.savefig(path2)
 plt.show()
