@@ -31,19 +31,19 @@ def PUF(x, A, B): #x is the input and A a the domain (challenges) that is mapped
     return y
 
 #Define attacker training stage 
-def training(PUF, A, B, queries, i):  #queries is a function on the security parameter defining the amount of queries allowed for learning. x is the challenge to be forged.
+def training(PUF, A, B, queries, sec):  #queries is a function on the security parameter (sec) defining the amount of queries allowed for learning. 
     #Create a database (memory) for challenges and responses learnt by querying the PUF.
     M_A = np.zeros(len(A)) 
     M_B = np.zeros(len(A))
     #Learning phase
-    for i in range(int(queries(i))):
+    for i in range(int(queries(sec))):
         a = random.randrange(0, len(A), 1)
         M_A[a] = a
         M_B[a] = PUF(a, A, B)
     return M_A, M_B
 
 #Define attacker forgery stage
-def forgery(M_A, M_B, PUF, A, B, x):
+def forgery(M_A, M_B, PUF, A, B, x):   #x is the challenge to be forged
     success = 0
     if M_B[x] == PUF(x, A, B):
         success = 1
