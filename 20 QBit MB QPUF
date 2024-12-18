@@ -1,0 +1,91 @@
+from qiskit_aer import AerSimulator
+from qiskit import QuantumCircuit, transpile
+from qiskit.circuit.library.standard_gates import UGate
+from qiskit_aer.noise import NoiseModel, depolarizing_error, amplitude_damping_error
+from qiskit.quantum_info import random_unitary, Operator
+import matplotlib.pyplot as plt
+
+# Function to check every second character in a binary string
+
+def check_every_second_zero(binary_string):
+    """
+    Checks if every second character in a binary string is '0'.
+    
+    Parameters:
+    binary_string (str): The binary string to check.
+    
+    Returns:
+    bool: True if every second character is '0', False otherwise.
+    """
+    return all(binary_string[i] == '0' for i in range(1, len(binary_string), 2))
+
+# Function to run and evaluate quantum circuits
+def evaluate_circuit(num_qubits, unitary1, unitary2=None):
+    qc = QuantumCircuit(num_qubits, num_qubits)
+
+    # Apply the unitary and its inverse or another unitary
+    for i in range(0, num_qubits, 2):
+        qc.append(unitary1.to_instruction(), [i])
+        if unitary2:
+            qc.append(unitary2.to_instruction(), [i])
+        else:
+            qc.append(unitary1.power(-1).to_instruction(), [i])
+
+    # Apply Hadamard gates and entanglement
+    for i in range(1, num_qubits, 2):
+        qc.h(i)
+        qc.cx(i-1, i)
+
+    qc.measure(range(num_qubits), range(num_qubits))
+
+    # Simulate the circuit
+    simulator = AerSimulator()
+    noise_model = NoiseModel()
+    single_qubit_error = depolarizing_error(0.001, 1)
+    noise_model.add_all_qubit_quantum_error(single_qubit_error, ['rz', 'sx'])
+    two_qubit_error = depolarizing_error(0.002, 2)
+    noise_model.add_all_qubit_quantum_error(two_qubit_error, ['cx'])
+
+    tqc = transpile(qc, simulator)
+    result = simulator.run(tqc, noise_model=noise_model, shots=1024).result()
+    counts = result.get_counts()
+
+    accepted = 0
+    rejected = 0
+
+    for key, count in counts.items():
+        if check_every_second_zero(key):
+            accepted += count
+        else:
+            rejected += count
+
+    print(f"Accepted: {accepted}")
+    print(f"Rejected: {rejected}")
+
+    return accepted, rejected
+
+# Generate unitaries
+unitary1 = Operator(random_unitary(2, seed=42).power(1))
+unitary2 = Operator(random_unitary(2, seed=24).power(1))
+
+# Run tests
+results = {
+    '16 qubits (same unitary)': evaluate_circuit(20, unitary1),
+    '16 qubits (different unitaries)': evaluate_circuit(20, unitary1, unitary2)
+}
+
+# Plot results
+fig, ax = plt.subplots(figsize=(8, 6))
+labels = results.keys()
+accepted_counts = [val[0] for val in results.values()]
+rejected_counts = [val[1] for val in results.values()]
+
+ax.bar(labels, accepted_counts, label='Accepted', color='green')
+ax.bar(labels, rejected_counts, bottom=accepted_counts, label='Rejected', color='red')
+ax.set_xlabel('Configuration')
+ax.set_ylabel('Counts')
+ax.set_title('User Authentication Results (16 Qubits, Double Check)')
+ax.legend()
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.show()
